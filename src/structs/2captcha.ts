@@ -1,4 +1,4 @@
-import fetch from "../utils/fetch"
+import { createProxiedFetch, ProxyConfig, default as fetchDefault } from "../utils/fetch"
 import { APIError } from "./2captchaError"
 import * as utils from "../utils/generic"
 import  getProviderData  from "./providers/providers"
@@ -333,22 +333,33 @@ interface CaptchaAnswer {
  * The main 2captcha class, housing all API calls and api interactions.
  * 
  */
+export interface SolverOptions {
+    pollingFrequency?: number;
+    enableACAO?: boolean;
+    proxy?: ProxyConfig;
+}
+
 export class Solver {
     public _apikey: string
     public _pollingFrequency: number
     public _headerACAO: number;
+    private _proxyConfig?: ProxyConfig;
+    private _fetch: typeof fetchDefault;
 
     /**
      * The constructor for the 2captcha Solver class.
      * 
      * @param {string} apikey The API key to use
-     * @param {number} pollingFrequency The frequency to poll for requests
+     * @param {SolverOptions} options Optional settings (pollingFrequency, enableACAO, proxy)
      * 
      */
-    constructor(apikey: string, pollingFrequency: number = 5000, enableACAO: boolean = true) {
+    constructor(apikey: string, options: SolverOptions = {}) {
+        const { pollingFrequency = 5000, enableACAO = true, proxy } = options;
         this._apikey = apikey
         this._pollingFrequency = pollingFrequency
         this._headerACAO = enableACAO ? 1 : 0
+        this._proxyConfig = proxy;
+        this._fetch = proxy ? createProxiedFetch(proxy) : fetchDefault;
 
     }
 
@@ -375,7 +386,7 @@ export class Solver {
      * })
      */
     public async balance(): Promise<number> {
-        const res = await fetch(this.res + utils.objectToURI({
+        const res = await this._fetch(this.res + utils.objectToURI({
             ...this.defaultPayload,
             action: "getbalance"
         }))
@@ -410,7 +421,7 @@ export class Solver {
 
         await utils.sleep(this.pollingFrequency)
 
-        const res = await fetch(this.res + utils.objectToURI(payload))
+        const res = await this._fetch(this.res + utils.objectToURI(payload))
         const result = await res.text()
 
         let data;
@@ -476,7 +487,7 @@ export class Solver {
             method: "userrecaptcha"
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -530,7 +541,7 @@ export class Solver {
             method: "hcaptcha"
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -607,7 +618,7 @@ export class Solver {
             method: "geetest"
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -661,7 +672,7 @@ export class Solver {
             ...this.defaultPayload
         }
     
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
     
         let data;
@@ -714,7 +725,7 @@ export class Solver {
         ...this.defaultPayload
     }
 
-    const response = await fetch(this.in + utils.objectToURI(payload))
+    const response = await this._fetch(this.in + utils.objectToURI(payload))
     const result = await response.text()
 
     let data;
@@ -786,7 +797,7 @@ export class Solver {
             method: "base64"
         }
         const URL = this.in
-        const response = await fetch(URL, {
+        const response = await this._fetch(URL, {
             body: JSON.stringify( payload ),
             method: "post",
             headers: {'Content-Type': 'application/json'}
@@ -845,7 +856,7 @@ export class Solver {
             method: "funcaptcha",
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -900,7 +911,7 @@ export class Solver {
             method: "lemin",
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -957,7 +968,7 @@ export class Solver {
             method: "amazon_waf",
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -1009,7 +1020,7 @@ export class Solver {
             method: "turnstile",
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -1064,7 +1075,7 @@ export class Solver {
         }
 
         const URL = this.in
-        const response = await fetch(URL, {
+        const response = await this._fetch(URL, {
             method: 'post',
             body: JSON.stringify(payload),
             headers: {'Content-Type': 'application/json'}  
@@ -1118,7 +1129,7 @@ export class Solver {
             method: "capy",
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -1170,7 +1181,7 @@ export class Solver {
             ...this.defaultPayload,
         }
 
-        const response = await fetch(this.in + utils.objectToURI(payload))
+        const response = await this._fetch(this.in + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;
@@ -1220,7 +1231,7 @@ public async cyberSiARA(params: paramsCyberSiARA): Promise<CaptchaAnswer> {
         method: "cybersiara",
     }
 
-    const response = await fetch(this.in + utils.objectToURI(payload))
+    const response = await this._fetch(this.in + utils.objectToURI(payload))
     const result = await response.text()
 
     let data;
@@ -1268,7 +1279,7 @@ public async mtCaptcha(params: paramsMTCaptcha): Promise<CaptchaAnswer> {
         method: "mt_captcha",
     }
 
-    const response = await fetch(this.in + utils.objectToURI(payload))
+    const response = await this._fetch(this.in + utils.objectToURI(payload))
     const result = await response.text()
 
     let data;
@@ -1326,7 +1337,7 @@ public async cutCaptcha(params: paramsCutcaptcha): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify(payload),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1378,7 +1389,7 @@ public async friendlyCaptcha(params: friendlyCaptcha): Promise<CaptchaAnswer> {
         method: "friendly_captcha",
     }
 
-    const response = await fetch(this.in + utils.objectToURI(payload))
+    const response = await this._fetch(this.in + utils.objectToURI(payload))
     const result = await response.text()
 
     let data;
@@ -1425,7 +1436,7 @@ public async boundingBox(params: paramsBoundingBox): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify( payload ),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1492,7 +1503,7 @@ public async grid(params: paramsGrid): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify( payload ),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1547,7 +1558,7 @@ public async text(params: paramsTextcaptcha): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify( payload ),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1609,7 +1620,7 @@ public async canvas(params: paramsGrid): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify( payload ),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1670,7 +1681,7 @@ public async rotate(params: paramsRotateCaptcha): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify(payload),
         method: "post",
         headers: {'Content-Type': 'application/json'}  
@@ -1737,7 +1748,7 @@ public async keyCaptcha(params: paramsKeyCaptcha): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify(payload),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1797,7 +1808,7 @@ public async tencent(params: paramsTencent): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify(payload),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1859,7 +1870,7 @@ public async atbCaptcha(params: paramsAtbCaptcha): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify(payload),
         method: "post",
         headers: {'Content-Type': 'application/json'}
@@ -1913,7 +1924,7 @@ public async prosopo(params: paramsProsopo): Promise<CaptchaAnswer> {
         method: "prosopo",
     }
 
-    const response = await fetch(this.in + utils.objectToURI(payload))
+    const response = await this._fetch(this.in + utils.objectToURI(payload))
     const result = await response.text()
 
     let data;
@@ -1968,7 +1979,7 @@ public async captchaFox(params: paramsCaptchaFox): Promise<CaptchaAnswer> {
         method: "captchafox",
     }
 
-    const response = await fetch(this.in + utils.objectToURI(payload))
+    const response = await this._fetch(this.in + utils.objectToURI(payload))
     const result = await response.text()
 
     let data;
@@ -2020,7 +2031,7 @@ public async vkimage(params: paramsVkImage): Promise<CaptchaAnswer> {
     }
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify(payload),
         method: "post",
         headers: {'Content-Type': 'application/json'}  
@@ -2077,7 +2088,7 @@ public async vkcaptcha(params: paramsVkCaptcha): Promise<CaptchaAnswer> {
         method: "vkcaptcha",
     }
 
-    const response = await fetch(this.in + utils.objectToURI(payload))
+    const response = await this._fetch(this.in + utils.objectToURI(payload))
     const result = await response.text()
 
     let data;
@@ -2131,7 +2142,7 @@ public async temu(params: paramsTemu): Promise<CaptchaAnswer> {
     };
 
     const URL = this.in
-    const response = await fetch(URL, {
+    const response = await this._fetch(URL, {
         body: JSON.stringify(payload),
         method: "post",
         headers: {'Content-Type': 'application/json'}  
@@ -2190,7 +2201,7 @@ public async altcha(params: paramsAltcha): Promise<CaptchaAnswer> {
         method: "altcha",
     };
 
-    const response = await fetch(this.in, {
+    const response = await this._fetch(this.in, {
         body: JSON.stringify(payload),
         method: "post",
         headers: { "Content-Type": "application/json" }
@@ -2245,7 +2256,7 @@ public async audio(params: paramsAudioCaptcha): Promise<CaptchaAnswer> {
         method: "audio",
     }
 
-    const response = await fetch(this.in, {
+    const response = await this._fetch(this.in, {
         method: 'post',
         body: JSON.stringify(payload),
         headers: {'Content-Type': 'application/json'}
@@ -2283,7 +2294,7 @@ public async audio(params: paramsAudioCaptcha): Promise<CaptchaAnswer> {
             ...this.defaultPayload
         }
 
-        const response = await fetch(this.res + utils.objectToURI(payload))
+        const response = await this._fetch(this.res + utils.objectToURI(payload))
         const result = await response.text();
 
         let data;
@@ -2317,7 +2328,7 @@ public async audio(params: paramsAudioCaptcha): Promise<CaptchaAnswer> {
             ...this.defaultPayload
         }
 
-        const response = await fetch(this.res + utils.objectToURI(payload))
+        const response = await this._fetch(this.res + utils.objectToURI(payload))
         const result = await response.text()
 
         let data;

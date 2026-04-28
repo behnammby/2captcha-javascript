@@ -63,7 +63,9 @@
     "example": "tsc && node ./tests/mtCaptcha.js"
   },
   "dependencies": {
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "https-proxy-agent": "^7.0.0",
+    "socks-proxy-agent": "^8.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.7",
