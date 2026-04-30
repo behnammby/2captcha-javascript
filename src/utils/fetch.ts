@@ -1,6 +1,6 @@
 import nodeFetch from 'node-fetch';
-import HttpsProxyAgent from 'https-proxy-agent';
-import SocksProxyAgent from 'socks-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 
 export type ProxyType = 'HTTP' | 'HTTPS' | 'SOCKS4' | 'SOCKS5';
 
@@ -13,13 +13,10 @@ function createProxyAgent(proxyConfig: ProxyConfig) {
   const { proxy, proxyType } = proxyConfig;
   
   if (proxyType === 'SOCKS4' || proxyType === 'SOCKS5') {
-    return new (SocksProxyAgent as any)({
-      proxy: proxy,
-      type: proxyType === 'SOCKS5' ? 5 : 4
-    });
+    return new SocksProxyAgent(proxy);
   }
   
-  return new (HttpsProxyAgent as any)(proxy);
+  return new HttpsProxyAgent(proxy);
 }
 
 export function createProxiedFetch(proxyConfig: ProxyConfig | undefined): typeof nodeFetch {

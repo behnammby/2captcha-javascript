@@ -5,17 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createProxiedFetch = void 0;
 const node_fetch_1 = __importDefault(require("node-fetch"));
-const https_proxy_agent_1 = __importDefault(require("https-proxy-agent"));
-const socks_proxy_agent_1 = __importDefault(require("socks-proxy-agent"));
+const https_proxy_agent_1 = require("https-proxy-agent");
+const socks_proxy_agent_1 = require("socks-proxy-agent");
 function createProxyAgent(proxyConfig) {
     const { proxy, proxyType } = proxyConfig;
     if (proxyType === 'SOCKS4' || proxyType === 'SOCKS5') {
-        return new socks_proxy_agent_1.default({
-            proxy: proxy,
-            type: proxyType === 'SOCKS5' ? 5 : 4
-        });
+        return new socks_proxy_agent_1.SocksProxyAgent(proxy);
     }
-    return new https_proxy_agent_1.default(proxy);
+    return new https_proxy_agent_1.HttpsProxyAgent(proxy);
 }
 function createProxiedFetch(proxyConfig) {
     if (!proxyConfig) {
